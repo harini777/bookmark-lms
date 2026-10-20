@@ -1,0 +1,2484 @@
+{
+  "info": {
+    "name": "Bookmark LMS — DA3 Software Testing",
+    "_postman_id": "bookmark-da3-collection",
+    "description": "DA3 Software Testing collection for Bookmark Digital Library Management System.\n\nOrganised into three DA3 categories:\n1. Functional E2E Tests – login, book CRUD, member operations, issue/return flows\n2. Boundary & Edge Case Tests – missing/invalid inputs, duplicates, invalid IDs\n3. Integration Tests – database persistence, inventory consistency, loan lifecycle\n\nPre-requisite: Start the Spring Boot backend (port 8080) and import the Bookmark_DA3_Environment.json.\nRun the collection with the Postman Collection Runner in order (top to bottom).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Functional E2E Tests",
+      "description": "End-to-end functional tests covering login, book CRUD, member operations, issue/return and reservation flows.",
+      "item": [
+        {
+          "name": "1.01 Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains JWT token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData.tokenType).to.eql('Bearer');",
+                  "});",
+                  "",
+                  "pm.test('Role is ADMINISTRATOR', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.role).to.eql('ADMINISTRATOR');",
+                  "});",
+                  "",
+                  "pm.test('Response contains user details', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userId).to.be.a('number');",
+                  "    pm.expect(jsonData.username).to.eql(pm.environment.get('adminUsername'));",
+                  "    pm.expect(jsonData.fullName).to.be.a('string');",
+                  "});",
+                  "",
+                  "// Store token and userId",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('adminToken', jsonData.token);",
+                  "pm.environment.set('adminUserId', jsonData.userId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.02 Login as Librarian",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains JWT token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Role is LIBRARIAN', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.role).to.eql('LIBRARIAN');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('librarianToken', jsonData.token);",
+                  "pm.environment.set('librarianUserId', jsonData.userId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{librarianUsername}}\",\n  \"password\": \"{{librarianPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.03 Login as Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains JWT token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Role is MEMBER', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.role).to.eql('MEMBER');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('memberToken', jsonData.token);",
+                  "pm.environment.set('memberUserId', jsonData.userId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{memberUsername}}\",\n  \"password\": \"{{memberPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.04 Register New Member",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var ts = Date.now();",
+                  "pm.environment.set('newMemberUsername', 'testuser_' + ts);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains new user details', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.be.a('number');",
+                  "    pm.expect(jsonData.username).to.eql(pm.environment.get('newMemberUsername'));",
+                  "    pm.expect(jsonData.role).to.eql('MEMBER');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('testMemberId', jsonData.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{newMemberUsername}}\",\n  \"email\": \"{{newMemberUsername}}@test.com\",\n  \"password\": \"Test@12345\",\n  \"fullName\": \"Test User DA3\",\n  \"phone\": \"9876543210\",\n  \"gender\": \"Other\",\n  \"address\": \"123 Test Street\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "1.05 Add Book (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Book details match request', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.eql('Software Engineering');",
+                  "    pm.expect(jsonData.author).to.eql('Ian Sommerville');",
+                  "    pm.expect(jsonData.isbn).to.eql('978-0137035151');",
+                  "    pm.expect(jsonData.totalCopies).to.eql(5);",
+                  "    pm.expect(jsonData.availableCopies).to.eql(5);",
+                  "});",
+                  "",
+                  "pm.test('Book has valid ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.be.a('number');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('testBookId', jsonData.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Software Engineering\",\n  \"author\": \"Ian Sommerville\",\n  \"isbn\": \"978-0137035151\",\n  \"category\": \"Computer Science\",\n  \"publisher\": \"Pearson\",\n  \"edition\": \"10th\",\n  \"publicationYear\": 2015,\n  \"language\": \"English\",\n  \"shelfLocation\": \"CS-A-01\",\n  \"description\": \"Comprehensive guide to software engineering principles and practice.\",\n  \"totalCopies\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "1.06 Add Second Book (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Book details match', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.eql('Clean Code');",
+                  "    pm.expect(jsonData.isbn).to.eql('978-0132350884');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('testBookId2', jsonData.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Clean Code\",\n  \"author\": \"Robert C. Martin\",\n  \"isbn\": \"978-0132350884\",\n  \"category\": \"Computer Science\",\n  \"publisher\": \"Prentice Hall\",\n  \"edition\": \"1st\",\n  \"publicationYear\": 2008,\n  \"language\": \"English\",\n  \"shelfLocation\": \"CS-A-02\",\n  \"description\": \"A handbook of agile software craftsmanship.\",\n  \"totalCopies\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "1.07 Get All Books",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array with at least 2 books', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(2);",
+                  "});",
+                  "",
+                  "pm.test('Each book has required fields', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(book) {",
+                  "        pm.expect(book).to.have.property('id');",
+                  "        pm.expect(book).to.have.property('title');",
+                  "        pm.expect(book).to.have.property('author');",
+                  "        pm.expect(book).to.have.property('isbn');",
+                  "        pm.expect(book).to.have.property('totalCopies');",
+                  "        pm.expect(book).to.have.property('availableCopies');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "1.08 Get Book by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returned correct book', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.eql(parseInt(pm.environment.get('testBookId')));",
+                  "    pm.expect(jsonData.title).to.eql('Software Engineering');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{testBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{testBookId}}"]
+            }
+          }
+        },
+        {
+          "name": "1.09 Search Books",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Search results contain matching book', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "    var titles = jsonData.map(function(b) { return b.title.toLowerCase(); });",
+                  "    pm.expect(titles.some(function(t) { return t.includes('software'); })).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/search?query=Software",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "search"],
+              "query": [{ "key": "query", "value": "Software" }]
+            }
+          }
+        },
+        {
+          "name": "1.10 Update Book (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Book updated successfully', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.edition).to.eql('11th');",
+                  "    pm.expect(jsonData.totalCopies).to.eql(8);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Software Engineering\",\n  \"author\": \"Ian Sommerville\",\n  \"isbn\": \"978-0137035151\",\n  \"category\": \"Computer Science\",\n  \"publisher\": \"Pearson\",\n  \"edition\": \"11th\",\n  \"publicationYear\": 2015,\n  \"language\": \"English\",\n  \"shelfLocation\": \"CS-A-01\",\n  \"description\": \"Comprehensive guide to software engineering.\",\n  \"totalCopies\": 8\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{testBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{testBookId}}"]
+            }
+          }
+        },
+        {
+          "name": "1.11 Get All Members (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array of members', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Each member has required fields', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(m) {",
+                  "        pm.expect(m).to.have.property('id');",
+                  "        pm.expect(m).to.have.property('username');",
+                  "        pm.expect(m).to.have.property('role');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "members"]
+            }
+          }
+        },
+        {
+          "name": "1.12 Search Members (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Search returns results', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/members/search?query=Alice",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "members", "search"],
+              "query": [{ "key": "query", "value": "Alice" }]
+            }
+          }
+        },
+        {
+          "name": "1.13 Get Current User Profile (Member)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns current member profile', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.username).to.eql(pm.environment.get('memberUsername'));",
+                  "    pm.expect(jsonData.role).to.eql('MEMBER');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/members/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "members", "me"]
+            }
+          }
+        },
+        {
+          "name": "1.14 Issue Book to Member (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Loan created with correct details', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.be.a('number');",
+                  "    pm.expect(jsonData.bookId).to.eql(parseInt(pm.environment.get('testBookId')));",
+                  "    pm.expect(jsonData.memberId).to.eql(parseInt(pm.environment.get('memberUserId')));",
+                  "    pm.expect(jsonData.status).to.eql('ISSUED');",
+                  "});",
+                  "",
+                  "pm.test('Loan has issue and due dates', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.issueDate).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData.dueDate).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('testLoanId', jsonData.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": {{memberUserId}},\n  \"bookId\": {{testBookId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/issue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "issue"]
+            }
+          }
+        },
+        {
+          "name": "1.15 Get Active Loans (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Active loans list is not empty', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Recently issued loan appears in active list', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var loanIds = jsonData.map(function(l) { return l.id; });",
+                  "    pm.expect(loanIds).to.include(parseInt(pm.environment.get('testLoanId')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "active"]
+            }
+          }
+        },
+        {
+          "name": "1.16 Get Member Loans",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns array with the member loan', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/member/{{memberUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "member", "{{memberUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "1.17 Renew Loan (Member)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Loan renewal count incremented', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.renewCount).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/{{testLoanId}}/renew",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "{{testLoanId}}", "renew"]
+            }
+          }
+        },
+        {
+          "name": "1.18 Return Book (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Loan status is RETURNED', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('RETURNED');",
+                  "    pm.expect(jsonData.returnDate).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/{{testLoanId}}/return",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "{{testLoanId}}", "return"]
+            }
+          }
+        },
+        {
+          "name": "1.19 Reserve Book (Member)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Reservation created', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.be.a('number');",
+                  "    pm.expect(jsonData.bookId).to.eql(parseInt(pm.environment.get('testBookId2')));",
+                  "    pm.expect(jsonData.status).to.eql('ACTIVE');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('testReservationId', jsonData.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/book/{{testBookId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservations", "book", "{{testBookId2}}"]
+            }
+          }
+        },
+        {
+          "name": "1.20 Get Member Reservations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('At least one reservation', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/member/{{memberUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservations", "member", "{{memberUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "1.21 Cancel Reservation (Member)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Reservation cancelled', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('CANCELLED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/{{testReservationId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservations", "{{testReservationId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "1.22 Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Identity verified message', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('verified');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"member1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "1.23 Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Password reset success message', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('reset successfully');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"member1\",\n  \"newPassword\": \"Member@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "1.24 Get Dashboard Stats (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Dashboard has stat fields', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('totalBooks');",
+                  "    pm.expect(jsonData).to.have.property('totalMembers');",
+                  "    pm.expect(jsonData).to.have.property('activeLoans');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "1.25 Get Reports (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Report contains expected sections', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports"]
+            }
+          }
+        },
+        {
+          "name": "1.26 Admin Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns array of users', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(4);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "1.27 Delete Book (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{testBookId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{testBookId2}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Boundary & Edge Case Tests",
+      "description": "Tests for missing/invalid inputs, duplicate records, invalid IDs, unavailable books, repeated returns, and invalid credentials.",
+      "item": [
+        {
+          "name": "2.01 Login with Empty Username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions username required', function () {",
+                  "    var body = pm.response.text();",
+                  "    pm.expect(body.toLowerCase()).to.include('username');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"anything\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "2.02 Login with Wrong Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"WrongPassword!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "2.03 Login with Nonexistent User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"nonexistentuser999\",\n  \"password\": \"SomePassword@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "2.04 Register with Duplicate Username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 409 (duplicate)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 409]);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates duplicate', function () {",
+                  "    var body = pm.response.text().toLowerCase();",
+                  "    pm.expect(body).to.satisfy(function(b) {",
+                  "        return b.includes('already') || b.includes('exists') || b.includes('duplicate') || b.includes('taken');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"email\": \"dup@test.com\",\n  \"password\": \"Test@12345\",\n  \"fullName\": \"Duplicate Admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2.05 Register with Short Password (< 6 chars)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error mentions password length', function () {",
+                  "    var body = pm.response.text().toLowerCase();",
+                  "    pm.expect(body).to.satisfy(function(b) {",
+                  "        return b.includes('password') || b.includes('6');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"shortpw_user\",\n  \"email\": \"short@test.com\",\n  \"password\": \"Ab1\",\n  \"fullName\": \"Short Password User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2.06 Register with Invalid Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error mentions email format', function () {",
+                  "    var body = pm.response.text().toLowerCase();",
+                  "    pm.expect(body).to.satisfy(function(b) {",
+                  "        return b.includes('email') || b.includes('invalid');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"bademail_user\",\n  \"email\": \"not-an-email\",\n  \"password\": \"Test@12345\",\n  \"fullName\": \"Bad Email User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2.07 Register with Missing Required Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"incomplete_user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2.08 Add Book with Missing Title",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message references title', function () {",
+                  "    var body = pm.response.text().toLowerCase();",
+                  "    pm.expect(body).to.satisfy(function(b) {",
+                  "        return b.includes('title') || b.includes('required') || b.includes('blank');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"author\": \"Some Author\",\n  \"isbn\": \"978-1234567890\",\n  \"totalCopies\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "2.09 Add Book with Negative Copies",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error about copies', function () {",
+                  "    var body = pm.response.text().toLowerCase();",
+                  "    pm.expect(body).to.satisfy(function(b) {",
+                  "        return b.includes('copies') || b.includes('0') || b.includes('greater') || b.includes('min');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Negative Book\",\n  \"author\": \"Some Author\",\n  \"isbn\": \"978-0000000000\",\n  \"totalCopies\": -5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "2.10 Get Book with Invalid ID (999999)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "999999"]
+            }
+          }
+        },
+        {
+          "name": "2.11 Access Books Without Authentication",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "2.12 Member Tries to Add Book (Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Forbidden Book\",\n  \"author\": \"Hacker\",\n  \"isbn\": \"978-HACK\",\n  \"totalCopies\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "2.13 Member Tries to Issue Book (Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": {{memberUserId}},\n  \"bookId\": {{testBookId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/issue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "issue"]
+            }
+          }
+        },
+        {
+          "name": "2.14 Issue Book with Invalid Member ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": 999999,\n  \"bookId\": {{testBookId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/issue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "issue"]
+            }
+          }
+        },
+        {
+          "name": "2.15 Issue Book with Invalid Book ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": {{memberUserId}},\n  \"bookId\": 999999\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/issue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "issue"]
+            }
+          }
+        },
+        {
+          "name": "2.16 Return Already Returned Loan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404, 409]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/{{testLoanId}}/return",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "{{testLoanId}}", "return"]
+            }
+          }
+        },
+        {
+          "name": "2.17 Return Loan with Invalid ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/999999/return",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "999999", "return"]
+            }
+          }
+        },
+        {
+          "name": "2.18 Reserve Book with Invalid Book ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/book/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservations", "book", "999999"]
+            }
+          }
+        },
+        {
+          "name": "2.19 Forgot Password with Nonexistent User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message about user not found', function () {",
+                  "    var body = pm.response.text().toLowerCase();",
+                  "    pm.expect(body).to.satisfy(function(b) {",
+                  "        return b.includes('not found') || b.includes('not exist');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"ghost_user_999\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "2.20 Reset Password with Short New Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"member1\",\n  \"newPassword\": \"ab\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "2.21 Member Tries to Access Admin Users (Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "2.22 Access with Expired/Invalid JWT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer invalid.jwt.token.here" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "2.23 Add Book with Empty Body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "2.24 Update Nonexistent Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ghost Book\",\n  \"author\": \"Nobody\",\n  \"isbn\": \"000-0000000000\",\n  \"totalCopies\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "999999"]
+            }
+          }
+        },
+        {
+          "name": "2.25 Delete Nonexistent Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "999999"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Integration Tests",
+      "description": "Tests that verify database persistence, inventory and loan consistency, and end-to-end workflow coherence across multiple API calls.",
+      "item": [
+        {
+          "name": "3.01 Setup — Login Librarian for Integration Tests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Librarian login OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('librarianToken', jsonData.token);",
+                  "pm.environment.set('librarianUserId', jsonData.userId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{librarianUsername}}\",\n  \"password\": \"{{librarianPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "3.02 Setup — Login Member for Integration Tests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Member login OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('memberToken', jsonData.token);",
+                  "pm.environment.set('memberUserId', jsonData.userId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{memberUsername}}\",\n  \"password\": \"{{memberPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "3.03 Create Book and Verify Persistence",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Book created (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('intgBookId', jsonData.id);",
+                  "",
+                  "pm.test('availableCopies equals totalCopies for new book', function () {",
+                  "    pm.expect(jsonData.availableCopies).to.eql(jsonData.totalCopies);",
+                  "    pm.expect(jsonData.totalCopies).to.eql(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Integration Test Book\",\n  \"author\": \"Test Author\",\n  \"isbn\": \"978-INTG-001\",\n  \"category\": \"Testing\",\n  \"publisher\": \"TestPub\",\n  \"totalCopies\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books"]
+            }
+          }
+        },
+        {
+          "name": "3.04 Verify Book Persisted via GET",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Book data matches what was created', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.eql(parseInt(pm.environment.get('intgBookId')));",
+                  "    pm.expect(jsonData.title).to.eql('Integration Test Book');",
+                  "    pm.expect(jsonData.author).to.eql('Test Author');",
+                  "    pm.expect(jsonData.isbn).to.eql('978-INTG-001');",
+                  "    pm.expect(jsonData.totalCopies).to.eql(3);",
+                  "    pm.expect(jsonData.availableCopies).to.eql(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{intgBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{intgBookId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.05 Issue Book — Check Inventory Decrements",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Issue successful (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('intgLoanId', jsonData.id);",
+                  "",
+                  "pm.test('Loan status is ISSUED', function () {",
+                  "    pm.expect(jsonData.status).to.eql('ISSUED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": {{memberUserId}},\n  \"bookId\": {{intgBookId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/issue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "issue"]
+            }
+          }
+        },
+        {
+          "name": "3.06 Verify Available Copies Decremented After Issue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Available copies decreased by 1', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalCopies).to.eql(3);",
+                  "    pm.expect(jsonData.availableCopies).to.eql(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{intgBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{intgBookId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.07 Return Book — Check Inventory Increments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Return successful (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Loan status is RETURNED', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('RETURNED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/{{intgLoanId}}/return",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "{{intgLoanId}}", "return"]
+            }
+          }
+        },
+        {
+          "name": "3.08 Verify Available Copies Restored After Return",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Available copies back to totalCopies', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalCopies).to.eql(3);",
+                  "    pm.expect(jsonData.availableCopies).to.eql(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{intgBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{intgBookId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.09 Register — Login — Verify Profile Consistency",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var ts = Date.now();",
+                  "pm.environment.set('intgNewUser', 'intg_user_' + ts);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Registration returns 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('User data consistent', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.username).to.eql(pm.environment.get('intgNewUser'));",
+                  "    pm.expect(jsonData.role).to.eql('MEMBER');",
+                  "});",
+                  "",
+                  "pm.environment.set('intgNewUserId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{intgNewUser}}\",\n  \"email\": \"{{intgNewUser}}@integration.com\",\n  \"password\": \"IntgTest@123\",\n  \"fullName\": \"Integration Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "3.10 Login Newly Registered User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User details match registration', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.username).to.eql(pm.environment.get('intgNewUser'));",
+                  "    pm.expect(jsonData.role).to.eql('MEMBER');",
+                  "    pm.expect(jsonData.token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.environment.set('intgNewUserToken', pm.response.json().token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{intgNewUser}}\",\n  \"password\": \"IntgTest@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "3.11 Verify New User Profile via /me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Profile data matches registration', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.username).to.eql(pm.environment.get('intgNewUser'));",
+                  "    pm.expect(jsonData.fullName).to.eql('Integration Test User');",
+                  "    pm.expect(jsonData.email).to.eql(pm.environment.get('intgNewUser') + '@integration.com');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{intgNewUserToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/members/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "members", "me"]
+            }
+          }
+        },
+        {
+          "name": "3.12 Full Loan Lifecycle — Issue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Issue OK (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('intgLoanId2', jsonData.id);",
+                  "pm.test('Status is ISSUED', function () {",
+                  "    pm.expect(jsonData.status).to.eql('ISSUED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": {{memberUserId}},\n  \"bookId\": {{intgBookId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/issue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "issue"]
+            }
+          }
+        },
+        {
+          "name": "3.13 Full Loan Lifecycle — Renew",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Renew OK (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Renew count incremented', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.renewCount).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/{{intgLoanId2}}/renew",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "{{intgLoanId2}}", "renew"]
+            }
+          }
+        },
+        {
+          "name": "3.14 Full Loan Lifecycle — Return",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Return OK (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Status is RETURNED', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('RETURNED');",
+                  "});",
+                  "pm.test('Return date is set', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.returnDate).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/{{intgLoanId2}}/return",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "{{intgLoanId2}}", "return"]
+            }
+          }
+        },
+        {
+          "name": "3.15 Verify Dashboard Stats After Operations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Dashboard stats reflect operations', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalBooks).to.be.a('number').and.to.be.at.least(1);",
+                  "    pm.expect(jsonData.totalMembers).to.be.a('number').and.to.be.at.least(1);",
+                  "    pm.expect(jsonData.activeLoans).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "3.16 Verify Reports Reflect Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Report is non-empty object', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(Object.keys(jsonData).length).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports"]
+            }
+          }
+        },
+        {
+          "name": "3.17 Cleanup — Delete Integration Test Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Delete successful (204)', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{librarianToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{intgBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{intgBookId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.18 Verify Deleted Book No Longer Exists",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 (book deleted)', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{memberToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{intgBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{intgBookId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
